@@ -52,7 +52,16 @@ const setSelectedCountry = () => {
 };
 
 watch(() => props.modelValue, (newVal) => {
-  if (!input.value) {
+  if (!newVal) {
+    input.value = '';
+    return;
+  }
+
+  const country = countriesList.value.find(c => newVal.startsWith(c.dialCode));
+  if (country) {
+    selectedCountry.value = country;
+    input.value = newVal.replace(country.dialCode, '').replace(/:/g, '');
+  } else {
     input.value = newVal.replace('+254', '').replace('+1', '');
   }
 });

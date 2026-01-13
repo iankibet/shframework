@@ -216,6 +216,7 @@ const submitBtn = ref(false)
 const validationErrors = ref({})
 const formError = ref(null)
 const submitBtnWidth = ref(null)
+const isDirty = ref(false)
 
 // Helper functions
 const closeModal = () => {
@@ -260,6 +261,7 @@ const getFormData = () => {
 }
 
 const fieldChanged = field => {
+  isDirty.value = true
   delete validationErrors.value[field]
   const data = getFormData()
   const fieldValue = formFields.value.find(f => f.field === field)?.value
@@ -347,6 +349,7 @@ const handleSuccessRequest = res => {
   if (!props.retainDataAfterSubmission) {
     formFields.value.forEach(field => field.value = null)
   }
+  isDirty.value = false
 
   if (!props.retainModal) {
     closeModal()
@@ -392,13 +395,15 @@ const handleFailedRequest = reason => {
   emit('formError', reason)
 }
 const setExistingData = (existingData) => {
-  if (!existingData) return
+  if (!existingData || isDirty.value) return
 
-  formFields.value = formFields.value.map(field => {
-    if (existingData[field.field] !== undefined) {
-      return { ...field, value: existingData[field.field] }
+  const keys = Object.keys(existingData)
+
+  keys.forEach(k => {
+    const field = formFields.value.find(f => f.field === k)
+    if (field) {
+      field.value = existingData[k]
     }
-    return field
   })
 }
 

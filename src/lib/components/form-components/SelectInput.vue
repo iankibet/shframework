@@ -1,17 +1,22 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import shApis from '../../repo/helpers/ShApis.js'
 
 const props = defineProps(['modelValue','label','url','required','options','dataUrl','data'])
 const emit = defineEmits(['update:modelValue','clearValidationErrors'])
-const inputModel = ref(null)
+
+// Use computed for proper two-way binding
+const inputModel = computed({
+  get: () => props.modelValue,
+  set: (value) => {
+    emit('clearValidationErrors')
+    emit('update:modelValue', value)
+  }
+})
+
 const selectOptions = ref(null)
-const modelValueUpdated = (e) => {
-  emit('clearValidationErrors')
-  emit('update:modelValue',inputModel.value)
-}
+
 onMounted(()=>{
-  props.modelValue && (inputModel.value = props.modelValue)
   const options = props.data ?? props.options
   if(options){
     selectOptions.value = options.map(item=>{
@@ -33,15 +38,10 @@ onMounted(()=>{
     })
   }
 })
-watch(()=>props.modelValue, (newValue)=>{
-  if(newValue) {
-    inputModel.value = newValue
-  }
-})
 </script>
 
 <template>
-  <select v-model="inputModel" @change="modelValueUpdated" @keydown="modelValueUpdated" @updated="modelValueUpdated">
+  <select v-model="inputModel">
     <template v-for="option in selectOptions" :key="option.id">
       <option :value="option.id">{{ option.name }}</option>
     </template>

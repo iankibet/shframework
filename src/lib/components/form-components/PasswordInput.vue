@@ -1,20 +1,19 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps(['modelValue','label'])
 const emit = defineEmits(['update:modelValue','clearValidationErrors'])
-const inputModel = ref(null)
 
-const modelValueUpdated = (e) => {
-  emit('clearValidationErrors')
-  emit('update:modelValue',inputModel.value)
-}
-onMounted(()=>{
-  props.modelValue && (inputModel.value = props.modelValue)
+// Use computed for proper two-way binding
+const inputModel = computed({
+  get: () => props.modelValue,
+  set: (value) => {
+    emit('clearValidationErrors')
+    emit('update:modelValue', value)
+  }
 })
-
 </script>
 
 <template>
-  <input type="password" v-model="inputModel" @change="modelValueUpdated" @keydown="modelValueUpdated" @updated="modelValueUpdated">
+  <input type="password" v-model="inputModel">
 </template>

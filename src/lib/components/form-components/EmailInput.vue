@@ -1,24 +1,19 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps(['modelValue','label'])
 const emit = defineEmits(['update:modelValue','clearValidationErrors'])
-const inputModel = ref(null)
 
-const modelValueUpdated = (e) => {
-  emit('clearValidationErrors')
-  emit('update:modelValue',inputModel.value)
-}
-onMounted(()=>{
-  props.modelValue && (inputModel.value = props.modelValue)
-})
-watch(()=>props.modelValue, (newValue)=>{
-  if(newValue) {
-    inputModel.value = newValue
+// Use computed for proper two-way binding
+const inputModel = computed({
+  get: () => props.modelValue,
+  set: (value) => {
+    emit('clearValidationErrors')
+    emit('update:modelValue', value)
   }
 })
 </script>
 
 <template>
-  <input type="email" v-model="inputModel" @change="modelValueUpdated" @keydown="modelValueUpdated" @updated="modelValueUpdated">
+  <input type="email" v-model="inputModel">
 </template>

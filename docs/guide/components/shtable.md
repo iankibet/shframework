@@ -74,11 +74,7 @@ You can provide custom formatting for any column by using a slot named after the
 - Default: `[]`
 - Required: `false`
 - Details:
-  An array of action objects to be performed on selected items. Each object contains:
-  - `label`: Button text.
-  - `callback`: Function called with an array of selected record objects.
-  - `class`: (Optional) CSS class for the button.
-  - `icon`: (Optional) Bootstrap icon class.
+  An array of action objects to be performed on selected items. Each object contains: - `label`: Button text. - `icon`: Bootstrap icon class. - `class`: CSS class for the button. - `path` / `url`: URL to navigate to (supports `{id}` placeholders). - `emits` / `callback` / `callBack`: Event name string or a callback function. - `type`: `confirmAction`, `silentAction`, or `dropdown`.
 
 ### links
 

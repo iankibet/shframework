@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import ShConfirmAction from '../ShConfirmAction.vue'
 import ShSilentAction from '../ShSilentAction.vue'
 import { storeToRefs } from 'pinia'
@@ -11,6 +11,9 @@ const props = defineProps(['action','record','actionClass','emitAction', 'type']
 
 
 const url = ref(props.action.path || props.action.url || props.action.link)
+
+const hasAction = computed(() => !!(props.action.callback || props.action.callBack || props.action.emits))
+const actionValue = computed(() => props.action.callback || props.action.callBack || props.action.emits)
 
 onMounted(()=>{
   if(!url.value) {
@@ -87,12 +90,12 @@ const {user} = storeToRefs(useUserStore())
             },
             actionClass
         ]"
-          v-else-if="action.emits"
-          @click="doEmitAction(action.emits, record)">
+          v-else-if="hasAction"
+          @click="doEmitAction(actionValue, record)">
     <span v-if="action.icon" :class="action.icon"></span>
     {{ action.label }}
   </span>
-  <router-link v-else-if="!action.emits" :title="action.title"
+  <router-link v-else-if="!hasAction" :title="action.title"
                :to="url"
                :class="action.class +' '+ actionClass">
     <span v-if="action.icon" :class="action.icon"></span>

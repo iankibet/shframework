@@ -14,7 +14,9 @@ const rowSelected = row=> {
 const edit = item=>{
   alert('Edit')
 }
-
+const logSelectedItems = items=>{
+  console.log(items)
+}
 const deleteItem = item=>{
   shRepo.runPlainRequest('notes/delete', item).then(res=>{
     res.isConfirmed && res.value.success && shRepo.showToast('Note deleted')
@@ -83,6 +85,15 @@ const allowSummary = row=>{
                       }
                   ]
                 }"
+                :multi-actions="[
+                  {
+                      label: 'Delete',
+                      icon: 'delete',
+                      permission: 'notes',
+                      class: 'text-danger btn',
+                      callback: logSelectedItems
+                  }
+              ]"
                 >
             <template #note="{ row }">
               <p v-html="row.note"></p>

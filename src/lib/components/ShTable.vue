@@ -42,7 +42,8 @@ const props = defineProps({
   paginationStyle: [String, null],
   hasRange: {type: Boolean, default: false},
   selectedRange: [Object, null],
-  noRecordsMessage: [String, null]
+  noRecordsMessage: [String, null],
+  multiActions: {type: Array, default: () => []}
 })
 
 const emit = defineEmits(['rowSelected', 'dataReloaded', 'dataLoaded'])
@@ -76,6 +77,9 @@ const from = ref(null)
 const to = ref(null)
 const period = ref(null)
 const lastId = ref(null)
+
+const selectedItems = ref([])
+const selectAll = ref(false)
 
 // Responsive width
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
@@ -395,6 +399,36 @@ const reloadData = (newPage, append) => {
   })
 }
 
+const toggleSelectAll = (event) => {
+  if (event.target.checked) {
+    selectedItems.value = records.value.map(r => r.id)
+  } else {
+    selectedItems.value = []
+  }
+}
+
+const toggleSelectItem = (id) => {
+  const index = selectedItems.value.indexOf(id)
+  if (index > -1) {
+    selectedItems.value.splice(index, 1)
+  } else {
+    selectedItems.value.push(id)
+  }
+}
+
+const runMultiAction = (action) => {
+  const selectedRecords = records.value.filter(r => selectedItems.value.includes(r.id))
+  if (typeof action.callback === 'function') {
+    action.callback(selectedRecords)
+  }
+  selectedItems.value = []
+}
+
+watch(selectedItems, (newVal) => {
+  selectAll.value = newVal.length === records.value.length && records.value.length > 0
+}, {deep: true})
+
+
 // --- Watches
 watch(() => props.hideIds, (newVal) => {
   if (Array.isArray(newVal) && Array.isArray(records.value)) {
@@ -488,6 +522,9 @@ const stateProxy = reactive({
     >
       <thead class="sh-thead">
       <tr>
+        <th v-if="multiActions.length > 0" style="width: 40px">
+          <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll"/>
+        </th>
         <template v-for="title in tableHeaders" :key="title">
           <th v-if="showColumn(title)">
             <a
@@ -524,7 +561,7 @@ const stateProxy = reactive({
 
       <tbody class="sh-tbody">
       <tr class="text-center" v-if="loading === 'loading'">
-        <td :colspan="tableHeaders.length">
+        <td :colspan="multiActions.length > 0 ? tableHeaders.length + 1 : tableHeaders.length">
           <div class="text-center">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -534,13 +571,13 @@ const stateProxy = reactive({
       </tr>
 
       <tr class="text-center alert alert-danger" v-else-if="loading === 'error'">
-        <td :colspan="tableHeaders.length">
+        <td :colspan="multiActions.length > 0 ? tableHeaders.length + 1 : tableHeaders.length">
           {{ loading_error }}
         </td>
       </tr>
 
       <tr class="no_records" v-else-if="records.length === 0">
-        <td :colspan="actions ? tableHeaders.length + 1 : tableHeaders.length">
+        <td :colspan="actions ? tableHeaders.length + (multiActions.length > 0 ? 2:1) : tableHeaders.length + (multiActions.length > 0 ? 1:0)">
           <div class="text-center bg-primary-light px-2 py-1 rounded no_records_div">
             <i class="bi-info-circle"></i> No records found
           </div>
@@ -554,6 +591,15 @@ const stateProxy = reactive({
           :class="record.class"
           @click="rowSelected(record)"
       >
+        <td v-if="multiActions.length > 0" @click.stop>
+          <input
+              type="checkbox"
+              class="form-check-input"
+              :value="record.id"
+              :checked="selectedItems.includes(record.id)"
+              @change="toggleSelectItem(record.id)"
+          />
+        </td>
         <template v-for="key in tableHeaders" :key="key">
           <td v-if="showColumn(key)">
             <slot :name="getSlotName(key)" :row="record" :index="index">
@@ -612,6 +658,18 @@ const stateProxy = reactive({
       <div class="mobile-list-items" v-else-if="loading === 'done'">
         <template v-for="(record,index) in records" :key="record.id">
           <div class="single-mobile-req bg-light p-3" @click="rowSelected(record)">
+            <div v-if="multiActions.length > 0" class="mb-2" @click.stop>
+              <div class="form-check">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    :id="'mobile-check-'+record.id"
+                    :checked="selectedItems.includes(record.id)"
+                    @change="toggleSelectItem(record.id)"
+                />
+                <label class="form-check-label" :for="'mobile-check-'+record.id">Select Item</label>
+              </div>
+            </div>
             <template v-for="key in tableHeaders" :key="key[0]">
               <template v-if="showColumn(key)">
                 <p class="mb-1 font-weight-bold text-capitalize profile-form-title" v-if="typeof key === 'string' ">
@@ -703,6 +761,25 @@ const stateProxy = reactive({
         </sh-canvas>
       </template>
     </template>
+
+    <div v-if="selectedItems.length > 0" class="sh-multi-actions-bar shadow-lg border rounded p-3 bg-white d-flex justify-content-between align-items-center animate__animated animate__slideInUp">
+      <div>
+        <span class="badge bg-primary rounded-pill me-2">{{ selectedItems.length }}</span> items selected
+      </div>
+      <div class="d-flex gap-2">
+        <button
+            v-for="action in multiActions"
+            :key="action.label"
+            class="btn btn-sm"
+            :class="action.class ?? 'btn-outline-primary'"
+            @click="runMultiAction(action)"
+        >
+          <i v-if="action.icon" :class="action.icon"></i>
+          {{ action.label }}
+        </button>
+        <button class="btn btn-sm btn-light" @click="selectedItems = []">Cancel</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -737,5 +814,14 @@ const stateProxy = reactive({
 
 .colored-toast .swal2-html-container {
   color: white;
+}
+
+.sh-multi-actions-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1050;
+  min-width: 300px;
 }
 </style>

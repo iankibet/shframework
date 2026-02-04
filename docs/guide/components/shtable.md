@@ -68,6 +68,18 @@ You can provide custom formatting for any column by using a slot named after the
 
       Example: `tasks/list`
 
+### multi-actions
+
+- Type: `array`
+- Default: `[]`
+- Required: `false`
+- Details:
+  An array of action objects to be performed on selected items. Each object contains:
+  - `label`: Button text.
+  - `callback`: Function called with an array of selected record objects.
+  - `class`: (Optional) CSS class for the button.
+  - `icon`: (Optional) Bootstrap icon class.
+
 ### links
 
 - Type: `object`

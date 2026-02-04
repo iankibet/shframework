@@ -19,8 +19,9 @@ npm install @iankibetsh/shframework
 A robust table component that handles server-side pagination, searching, and custom formatting.
 
 - **Nested Key Support**: Access nested properties using dot notation (e.g., `user.name`).
-- **Auto-Labels**: Automatically generates headers from keys (e.g., `created_at` -> **Created At**).
-- **Named Slots**: Customize any column using `<template #column_key="{ row }">`.
+- **Auto-Label Generation**: Automatically generates human-readable labels from keys if not explicitly provided (e.g., `user.first_name` becomes "First Name").
+- **Named Slots for Custom Formatting**: Use named slots for columns to provide custom formatting (e.g., `<template #age="{ row }">`).
+- **Multi-Action Support**: Enable row selection and collective operations with a floating action bar.
 - **Links & Actions**: Easily define column links and action buttons.
 
 ```html
@@ -29,6 +30,29 @@ A robust table component that handles server-side pagination, searching, and cus
     <strong>{{ row.user.name }}</strong>
   </template>
 </sh-table>
+```
+
+### Multi-Action Support
+
+Enable multi-row selection and perform collective actions by passing the `multi-actions` prop.
+
+```html
+<sh-table
+  :headers="['id', 'name']"
+  end-point="users/list"
+  :multi-actions="[
+    {
+      label: 'Delete Selected',
+      class: 'btn-outline-danger',
+      icon: 'bi-trash',
+      callback: (selectedRecords) => {
+        // Handle action, e.g., send IDs to backend
+        const ids = selectedRecords.map(r => r.id);
+        console.log('Selected IDs:', ids);
+      }
+    }
+  ]"
+/>
 ```
 
 ### 2. ShAutoForm

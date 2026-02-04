@@ -45,6 +45,7 @@ Enable multi-row selection and perform collective actions by passing the `multi-
       label: 'Delete Selected',
       class: 'btn-outline-danger',
       icon: 'bi-trash',
+      permission: 'delete_users',
       callback: (selectedRecords) => {
         // Handle action, e.g., send IDs to backend
         const ids = selectedRecords.map(r => r.id);

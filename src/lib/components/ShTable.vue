@@ -1,5 +1,8 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, inject, useSlots } from 'vue'
+import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '../repo/stores/ShUser'
 import NoRecords from './others/NoRecords.vue'
 import TableActions from './table/TableActions.vue'
 import ShCanvas from './ShCanvas.vue'
@@ -7,7 +10,7 @@ import ShRange from './ShRange.vue'
 import pagination from './list_templates/Pagination.vue'
 import { DateTime } from 'luxon'
 
-import apis from '../repo/helpers/ShApis.js'
+import ShApis from '../repo/helpers/ShApis'
 import helpers from '../repo/helpers/ShRepo.js'
 import shRepo from '../repo/helpers/ShRepo.js'
 import shStorage from '../repo/repositories/ShStorage'
@@ -145,6 +148,15 @@ const getSlotName = (key) => {
   if (typeof key === 'function') return key(null)
   return ''
 }
+
+const {user} = storeToRefs(useUserStore())
+
+const activeMultiActions = computed(() => {
+  return props.multiActions.filter(action => {
+    if (!action.permission) return true
+    return user.value.isAllowedTo(action.permission)
+  })
+})
 
 const cleanColumn = (col) => {
   const newCol = {...col}
@@ -522,7 +534,7 @@ const stateProxy = reactive({
     >
       <thead class="sh-thead">
       <tr>
-        <th v-if="multiActions.length > 0" style="width: 40px">
+        <th v-if="activeMultiActions.length > 0" style="width: 40px">
           <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll"/>
         </th>
         <template v-for="title in tableHeaders" :key="title">
@@ -561,7 +573,7 @@ const stateProxy = reactive({
 
       <tbody class="sh-tbody">
       <tr class="text-center" v-if="loading === 'loading'">
-        <td :colspan="multiActions.length > 0 ? tableHeaders.length + 1 : tableHeaders.length">
+        <td :colspan="activeMultiActions.length > 0 ? tableHeaders.length + 1 : tableHeaders.length">
           <div class="text-center">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -571,13 +583,13 @@ const stateProxy = reactive({
       </tr>
 
       <tr class="text-center alert alert-danger" v-else-if="loading === 'error'">
-        <td :colspan="multiActions.length > 0 ? tableHeaders.length + 1 : tableHeaders.length">
+        <td :colspan="activeMultiActions.length > 0 ? tableHeaders.length + 1 : tableHeaders.length">
           {{ loading_error }}
         </td>
       </tr>
 
       <tr class="no_records" v-else-if="records.length === 0">
-        <td :colspan="actions ? tableHeaders.length + (multiActions.length > 0 ? 2:1) : tableHeaders.length + (multiActions.length > 0 ? 1:0)">
+        <td :colspan="actions ? tableHeaders.length + (activeMultiActions.length > 0 ? 2:1) : tableHeaders.length + (activeMultiActions.length > 0 ? 1:0)">
           <div class="text-center bg-primary-light px-2 py-1 rounded no_records_div">
             <i class="bi-info-circle"></i> No records found
           </div>
@@ -591,7 +603,7 @@ const stateProxy = reactive({
           :class="record.class"
           @click="rowSelected(record)"
       >
-        <td v-if="multiActions.length > 0" @click.stop>
+        <td v-if="activeMultiActions.length > 0" @click.stop>
           <input
               type="checkbox"
               class="form-check-input"
@@ -658,7 +670,7 @@ const stateProxy = reactive({
       <div class="mobile-list-items" v-else-if="loading === 'done'">
         <template v-for="(record,index) in records" :key="record.id">
           <div class="single-mobile-req bg-light p-3" @click="rowSelected(record)">
-            <div v-if="multiActions.length > 0" class="mb-2" @click.stop>
+            <div v-if="activeMultiActions.length > 0" class="mb-2" @click.stop>
               <div class="form-check">
                 <input
                     type="checkbox"
@@ -762,13 +774,13 @@ const stateProxy = reactive({
       </template>
     </template>
 
-    <div v-if="selectedItems.length > 0" class="sh-multi-actions-bar shadow-lg border rounded p-3 bg-white d-flex justify-content-between align-items-center animate__animated animate__slideInUp">
+    <div v-if="selectedItems.length > 0 && activeMultiActions.length > 0" class="sh-multi-actions-bar shadow-lg border rounded p-3 bg-white d-flex justify-content-between align-items-center animate__animated animate__slideInUp">
       <div>
         <span class="badge bg-primary rounded-pill me-2">{{ selectedItems.length }}</span> items selected
       </div>
       <div class="d-flex gap-2">
         <button
-            v-for="action in multiActions"
+            v-for="action in activeMultiActions"
             :key="action.label"
             class="btn btn-sm"
             :class="action.class ?? 'btn-outline-primary'"

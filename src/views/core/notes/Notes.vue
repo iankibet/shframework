@@ -98,6 +98,9 @@ const allowSummary = row=>{
             <template #note="{ row }">
               <p v-html="row.note"></p>
             </template>
+            <template #empty>
+              <h3>No notes</h3>
+            </template>
               </sh-table>
             </div>
         </div>

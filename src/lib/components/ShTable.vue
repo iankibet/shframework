@@ -599,7 +599,13 @@ const stateProxy = reactive({
         <span>{{ loading_error }}</span>
       </div>
       <template v-if="loading === 'done'">
-        <template v-for="record in records" :key="record.id">
+        <template v-if="records.length === 0">
+          <slot name="empty" v-if="hasEmptySlot"></slot>
+          <div v-else-if="!hasRecordsSlot" class="text-center bg-primary-light px-2 py-1 rounded no_records_div">
+            <i class="bi-info-circle"></i> No records found
+          </div>
+        </template>
+        <template v-for="record in records" :key="record.id" v-else>
           <slot :record="record"></slot>
         </template>
       </template>

@@ -64,6 +64,7 @@ app.use(ShFrontend,{
   tablePaginationStyle: 'table', //loadMore,table
   noRecordsComponent: NoRecords,
   tablePerPage: 3,
+  enableTableCache: true,
   shFormElementClasses,
   toastTimer: 4000,
   shFormComponents,

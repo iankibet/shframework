@@ -23,6 +23,7 @@ import apis from "../repo/helpers/ShApis";
 import helpers from "../repo/helpers/ShRepo.js";
 import shRepo from "../repo/helpers/ShRepo.js";
 import shStorage from "../repo/repositories/ShStorage";
+import shIndexedDB from "../repo/repositories/ShIndexedDB";
 
 // --- Props / Emits
 const props = defineProps({
@@ -56,6 +57,8 @@ const props = defineProps({
   selectedRange: [Object, null],
   noRecordsMessage: [String, null],
   multiActions: { type: Array, default: () => [] },
+  cache: { type: Boolean, default: null },
+  rowLink: [String, null],
 });
 
 const emit = defineEmits(["rowSelected", "dataReloaded", "dataLoaded"]);
@@ -110,7 +113,7 @@ const hasRecordsSlot = computed(() => !!slots.records);
 const hasEmptySlot = computed(() => !!slots.empty);
 
 // --- Lifecycle
-onMounted(() => {
+onMounted(async () => {
   if (props.headers) tableHeaders.value = props.headers;
 
   if (props.actions?.actions) {
@@ -119,7 +122,7 @@ onMounted(() => {
     });
   }
 
-  if (props.cacheKey) setCachedData();
+  if (shouldCache.value) await setCachedData();
 
   reloadData();
 
@@ -197,12 +200,26 @@ const canvasClosed = () => {
   selectedRecord.value = null;
 };
 
+const router = useRouter();
 const rowSelected = (row) => {
   selectedRecord.value = null;
   setTimeout(() => {
     selectedRecord.value = row;
     emit("rowSelected", row);
+    if (props.rowLink) {
+      router.push(replaceRowLink(props.rowLink, row));
+    }
   }, 100);
+};
+
+const replaceRowLink = (p, obj) => {
+  let path = p;
+  const matches = path.match(/\{(.*?)\}/g);
+  matches?.forEach((k) => {
+    const key = k.replace("{", "").replace("}", "");
+    path = path.replace(`{${key}}`, obj[key]);
+  });
+  return path;
 };
 
 const changeKey = (key, value) => {
@@ -364,22 +381,41 @@ const exportData = () => {
     });
 };
 
-const setCachedData = () => {
-  if (props.cacheKey) {
-    records.value = shStorage.getItem("sh_table_cache_" + props.cacheKey, null);
+const setCachedData = async () => {
+  if (shouldCache.value) {
+    const cached = await shIndexedDB.getItem(computedCacheKey.value, null);
+    if (cached) {
+      records.value = cached;
+      loading.value = "done";
+    }
   }
 };
 
 const reloadNotifications = () => reloadData();
 
+const shouldCache = computed(() => {
+  if (props.cache !== null) return props.cache;
+  return shRepo.getShConfig("enableTableCache", false);
+});
+
+const computedCacheKey = computed(() => {
+  if (props.cacheKey) return "sh_table_cache_" + props.cacheKey;
+  const keyBase = props.endPoint || props.query || "default";
+  const safeBase = keyBase.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+  return "sh_table_cache_" + safeBase;
+});
+
 // Main loader
 const reloadData = (newPage, append) => {
   if (typeof newPage !== "undefined") page.value = newPage;
 
-  if (props.cacheKey && records.value !== null) {
+  if (shouldCache.value && records.value && records.value.length > 0 && !filter_value.value) {
     loading.value = "done";
   } else if (!append) {
     loading.value = "loading";
+    if (filter_value.value) {
+      records.value = [];
+    }
   }
 
   let data = {
@@ -418,8 +454,8 @@ const reloadData = (newPage, append) => {
       const response = req.data.data;
       emit("dataLoaded", response);
 
-      if (page.value < 2 && props.cacheKey) {
-        shStorage.setItem("sh_table_cache_" + props.cacheKey, response.data);
+      if (page.value < 2 && shouldCache.value) {
+        shIndexedDB.setItem(computedCacheKey.value, response.data);
       }
 
       pagination_data.value = {
@@ -590,15 +626,15 @@ const stateProxy = reactive({
     </div>
 
     <template v-if="hasDefaultSlot">
-      <div class="text-center" v-if="loading === 'loading'">
+      <div class="text-center" v-if="loading === 'loading' && records.length === 0">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-      <div v-else-if="loading === 'error'" class="alert alert-danger">
+      <div v-else-if="loading === 'error' && records.length === 0" class="alert alert-danger">
         <span>{{ loading_error }}</span>
       </div>
-      <template v-if="loading === 'done'">
+      <template v-if="loading === 'done' || records.length > 0">
         <template v-if="records.length === 0">
           <slot name="empty" v-if="hasEmptySlot"></slot>
           <div v-else-if="!hasRecordsSlot" class="text-center bg-primary-light px-2 py-1 rounded no_records_div">
@@ -612,18 +648,18 @@ const stateProxy = reactive({
     </template>
 
     <template v-else-if="hasRecordsSlot">
-      <div class="text-center" v-if="loading === 'loading' && !cacheKey">
+      <div class="text-center" v-if="loading === 'loading' && records.length === 0">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
       <div
-        v-else-if="loading === 'error' && !cacheKey"
+        v-else-if="loading === 'error' && records.length === 0"
         class="alert alert-danger error-loading"
       >
         <span>{{ loading_error }}</span>
       </div>
-      <template v-if="loading === 'done' || cacheKey">
+      <template v-if="loading === 'done' || records.length > 0">
         <template v-if="!records || records.length === 0">
           <slot name="empty" v-if="hasEmptySlot"></slot>
           <component :is="noRecordsComponent" v-else>
@@ -689,7 +725,7 @@ const stateProxy = reactive({
       </thead>
 
       <tbody class="sh-tbody">
-        <tr class="text-center" v-if="loading === 'loading'">
+        <tr class="text-center" v-if="loading === 'loading' && records.length === 0">
           <td
             :colspan="
               activeMultiActions.length > 0
@@ -707,7 +743,7 @@ const stateProxy = reactive({
 
         <tr
           class="text-center alert alert-danger"
-          v-else-if="loading === 'error'"
+          v-else-if="loading === 'error' && records.length === 0"
         >
           <td
             :colspan="
@@ -742,7 +778,7 @@ const stateProxy = reactive({
           v-else-if="loading === 'done'"
           v-for="(record, index) in records"
           :key="record.id"
-          :class="record.class"
+          :class="[record.class, props.rowLink ? 'cursor-pointer' : '']"
           @click="rowSelected(record)"
         >
           <td v-if="activeMultiActions.length > 0" @click.stop>
@@ -822,6 +858,7 @@ const stateProxy = reactive({
         <template v-for="(record, index) in records" :key="record.id">
           <div
             class="single-mobile-req bg-light p-3"
+            :class="props.rowLink ? 'cursor-pointer' : ''"
             @click="rowSelected(record)"
           >
             <div v-if="activeMultiActions.length > 0" class="mb-2" @click.stop>
@@ -1057,5 +1094,8 @@ const stateProxy = reactive({
   transform: translateX(-50%);
   z-index: 1050;
   min-width: 300px;
+}
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

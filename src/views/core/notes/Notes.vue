@@ -47,13 +47,13 @@ const allowSummary = row=>{
         <h5 v-if-user-can="'notes'">Notes</h5>
         <div class="card shadow rounded">
             <div class="card-body">
-              <sh-table :end-point="`notes/list`" no-records-message="No notes">
+              <sh-table :cache="true" :end-point="`notes/list`" no-records-message="No notes">
                 <template v-slot:records="slotProps">
                   <h3>{{ records }}</h3>
                 </template>
               </sh-table>
               {{ selected}}
-                <sh-table  :has-range="false" :end-point="`notes/list`" :headers="['id','user.name',{
+                <sh-table :cache="true"  :has-range="false" :end-point="`notes/list`" :headers="['id','user.name',{
                   label:'Summary',
                   key:'title',
                   callback:formatTitle,

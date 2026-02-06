@@ -406,7 +406,13 @@ const shouldCache = computed(() => {
 // Generates a unique, slug-safe key for IndexedDB storage
 const computedCacheKey = computed(() => {
   if (props.cacheKey) return "sh_table_cache_" + props.cacheKey;
-  const keyBase = props.endPoint || props.query || "default";
+  let keyBase = props.endPoint || props.query || "default";
+  
+  // Include date range in the key if active
+  if (from.value || to.value || period.value) {
+    keyBase += `_${from.value}_${to.value}_${period.value}`;
+  }
+  
   const safeBase = keyBase.replace(/[^a-z0-9]/gi, "_").toLowerCase();
   return "sh_table_cache_" + safeBase;
 });

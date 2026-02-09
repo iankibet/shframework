@@ -37,7 +37,7 @@ onMounted(()=>{
 </script>
 
 <template>
-  <select v-model="inputModel">
+  <select v-model="model" @change="onInput">
     <template v-for="option in selectOptions" :key="option.id">
       <option :value="option.id">{{ option.name }}</option>
     </template>

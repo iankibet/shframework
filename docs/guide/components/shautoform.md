@@ -7,15 +7,35 @@ ShAutoForm is a powerful auto-generating form component that automatically rende
 ```vue
 <template>
   <ShAutoForm
-    :fields="['name', 'email', 'phone']"
-    action="/api/users"
+    :fields="fields"
+    :action="getActionUrl('addUser')"
     method="post"
     successMessage="User created successfully!"
   />
 </template>
 
 <script setup>
-import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
+import { ShAutoForm } from "@iankibetsh/shframework";
+import { useStreamline } from "@iankibetsh/vue-streamline";
+
+const { getActionUrl } = useStreamline("users");
+
+const fields = [
+  {
+    field: "name",
+    label: "Full Name",
+    required: true,
+  },
+  {
+    field: "email",
+    type: "email",
+    required: true,
+  },
+  {
+    field: "phone",
+    type: "phone",
+  },
+];
 </script>
 ```
 
@@ -27,15 +47,12 @@ import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
 
 - **Type:** `Array`
 - **Required:** `true`
-- **Description:** Array of field names (strings) or field configuration objects
+- **Description:** Array of field configuration objects (preferred) or field names (strings)
 
 **Example:**
 
 ```javascript
-// Simple array of field names
-const fields = ["name", "email", "phone"];
-
-// Array of field objects with configuration
+// Array of field objects with configuration (Recommended)
 const fields = [
   {
     field: "name",
@@ -49,6 +66,9 @@ const fields = [
     label: "Email Address",
   },
 ];
+
+// Simple array of field names
+const fields = ["name", "email", "phone"];
 ```
 
 ### Optional Props
@@ -57,7 +77,7 @@ const fields = [
 
 - **Type:** `String`
 - **Required:** `false`
-- **Description:** The API endpoint URL for form submission (not needed if using `gqlMutation`)
+- **Description:** The API endpoint URL for form submission. When using Streamline, this is typically retrieved using `getActionUrl('actionName')`. Not needed if using `gqlMutation`.
 
 #### method
 
@@ -428,9 +448,8 @@ ShAutoForm automatically detects field types based on field names:
 ```vue
 <template>
   <ShAutoForm
-    :fields="['name', 'email', 'message']"
-    :textAreas="['message']"
-    action="/api/contact"
+    :fields="fields"
+    :action="getActionUrl('sendMessage')"
     actionLabel="Send Message"
     successMessage="Message sent successfully!"
     @success="onSuccess"
@@ -438,7 +457,16 @@ ShAutoForm automatically detects field types based on field names:
 </template>
 
 <script setup>
-import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
+import { ShAutoForm } from "@iankibetsh/shframework";
+import { useStreamline } from "@iankibetsh/vue-streamline";
+
+const { getActionUrl } = useStreamline("contact");
+
+const fields = [
+  { field: "name", label: "Name", required: true },
+  { field: "email", type: "email", label: "Email", required: true },
+  { field: "message", type: "textarea", label: "Message", required: true },
+];
 
 const onSuccess = (data) => {
   console.log("Form submitted:", data);
@@ -452,11 +480,8 @@ const onSuccess = (data) => {
 <template>
   <ShAutoForm
     :fields="fields"
-    :required="['name', 'email', 'password']"
     :fillSelects="fillSelects"
-    :labels="labels"
-    :helperTexts="helperTexts"
-    action="/api/register"
+    :action="getActionUrl('register')"
     method="post"
     actionLabel="Create Account"
     successMessage="Account created successfully!"
@@ -465,29 +490,26 @@ const onSuccess = (data) => {
 </template>
 
 <script setup>
-import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
+import { ShAutoForm } from "@iankibetsh/shframework";
+import { useStreamline } from "@iankibetsh/vue-streamline";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
+const { getActionUrl } = useStreamline("auth");
 
 const fields = [
-  "name",
-  "email",
-  "password",
-  "password_confirmation",
-  "phone",
-  "gender",
-  "age",
+  { field: "name", label: "Name", required: true },
+  { field: "email", type: "email", label: "Email", required: true },
+  { field: "password", type: "password", label: "Password", required: true },
+  {
+    field: "password_confirmation",
+    type: "password",
+    label: "Confirm Password",
+  },
+  { field: "phone", type: "phone", label: "Phone" },
+  { field: "gender", type: "select", label: "Gender" },
+  { field: "age", type: "number", label: "Age" },
 ];
-
-const labels = {
-  password_confirmation: "Confirm Password",
-};
-
-const helperTexts = {
-  password: "Must be at least 8 characters",
-  email: "We will never share your email",
-};
 
 const fillSelects = {
   gender: {
@@ -510,9 +532,9 @@ const redirectToLogin = () => {
 ```vue
 <template>
   <ShAutoForm
-    :fields="['name', 'email', 'phone']"
+    :fields="fields"
     :currentData="userData"
-    :action="`/api/users/${userId}`"
+    :action="getActionUrl('updateUser')"
     method="put"
     actionLabel="Update Profile"
     successMessage="Profile updated!"
@@ -522,10 +544,18 @@ const redirectToLogin = () => {
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
+import { ShAutoForm } from "@iankibetsh/shframework";
+import { useStreamline } from "@iankibetsh/vue-streamline";
 
 const userId = ref(1);
 const userData = ref({});
+const { getActionUrl } = useStreamline(`users/${userId.value}`);
+
+const fields = [
+  { field: "name", label: "Name" },
+  { field: "email", type: "email", label: "Email" },
+  { field: "phone", type: "phone", label: "Phone" },
+];
 
 onMounted(async () => {
   // Fetch user data
@@ -656,19 +686,9 @@ const onFieldChange = (field, value, formData) => {
 ```vue
 <template>
   <ShAutoForm
-    :fields="[
-      'name',
-      'email',
-      'phone',
-      'password',
-      'password_confirmation',
-      'address',
-      'city',
-      'country',
-    ]"
+    :fields="fields"
     :steps="steps"
-    :required="['name', 'email', 'password']"
-    action="/api/register"
+    :action="getActionUrl('register')"
     method="post"
     actionLabel="Complete Registration"
     successMessage="Registration completed!"
@@ -677,11 +697,27 @@ const onFieldChange = (field, value, formData) => {
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
+import { ShAutoForm } from "@iankibetsh/shframework";
+import { useStreamline } from "@iankibetsh/vue-streamline";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
+const { getActionUrl } = useStreamline("auth");
+
+const fields = [
+  { field: "name", label: "Name", required: true },
+  { field: "email", type: "email", label: "Email", required: true },
+  { field: "phone", type: "phone", label: "Phone" },
+  { field: "password", type: "password", label: "Password", required: true },
+  {
+    field: "password_confirmation",
+    type: "password",
+    label: "Confirm Password",
+  },
+  { field: "address", label: "Address" },
+  { field: "city", label: "City" },
+  { field: "country", type: "select", label: "Country" },
+];
 
 const steps = [
   {

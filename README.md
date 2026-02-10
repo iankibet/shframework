@@ -72,9 +72,13 @@ The flagship component for generating complex forms from simple configurations.
 
 ```html
 <sh-auto-form
-  :fields="['name', 'email', 'password', 'gender']"
-  :required="['name', 'email']"
-  action="auth/register"
+  :fields="[
+    { field: 'name', label: 'Name', required: true },
+    { field: 'email', type: 'email', label: 'Email', required: true },
+    { field: 'password', type: 'password', label: 'Password' },
+    { field: 'gender', type: 'select', label: 'Gender' }
+  ]"
+  :action="getActionUrl('register')"
   :successCallback="onRegistered"
 />
 ```
@@ -91,8 +95,11 @@ A convenience component that wraps a trigger button, a Bootstrap modal, and an `
 <sh-modal-form
   modal-id="addTaskModal"
   modal-title="Create New Task"
-  :fields="['title', 'description']"
-  action="tasks/store"
+  :fields="[
+    { field: 'title', label: 'Task Title', required: true },
+    { field: 'description', type: 'textarea', label: 'Description' }
+  ]"
+  :action="getActionUrl('storeTask')"
 >
   Add Task
 </sh-modal-form>

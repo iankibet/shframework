@@ -1,6 +1,6 @@
 # ShAutoForm
 
-ShAutoForm is a powerful auto-generating form component that automatically renders form fields based on configuration. It handles validation, submission, and integrates seamlessly with both REST APIs and GraphQL mutations.
+ShAutoForm is a powerful auto-generating form component that automatically renders form fields based on configuration. It handles validation and submission, and integrates seamlessly with REST APIs.
 
 ## Basic Usage
 
@@ -77,7 +77,7 @@ const fields = ["name", "email", "phone"];
 
 - **Type:** `String`
 - **Required:** `false`
-- **Description:** The API endpoint URL for form submission. When using Streamline, this is typically retrieved using `getActionUrl('actionName')`. Not needed if using `gqlMutation`.
+- **Description:** The API endpoint URL for form submission. When using Streamline, this is typically retrieved using `getActionUrl('actionName')`.
 
 #### method
 
@@ -335,16 +335,10 @@ const fillSelects = {
 };
 ```
 
-#### gqlMutation
-
-- **Type:** `String`
-- **Required:** `false`
-- **Description:** GraphQL mutation name (use instead of `action` for GraphQL)
-
 **Example:**
 
 ```javascript
-const gqlMutation = "createUser";
+
 ```
 
 ## Events
@@ -601,28 +595,6 @@ const validateForm = async (formData) => {
 
 const handleLogin = (data) => {
   console.log("Logged in:", data);
-};
-</script>
-```
-
-### GraphQL Mutation Form
-
-```vue
-<template>
-  <ShAutoForm
-    :fields="['name', 'email']"
-    gqlMutation="createUser"
-    actionLabel="Create User"
-    successMessage="User created!"
-    @success="onUserCreated"
-  />
-</template>
-
-<script setup>
-import { ShAutoForm } from "@/lib/components/ShAutoForm.vue";
-
-const onUserCreated = (data) => {
-  console.log("GraphQL mutation result:", data);
 };
 </script>
 ```

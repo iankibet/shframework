@@ -66,8 +66,6 @@ The flagship component for generating complex forms from simple configurations.
 - **Auto-Detection**: Infers input types from field names (email, phone, date, etc.).
 - **Multi-Step Support**: Break long forms into logical steps with progress indicators.
 - **Validation**: Seamlessly handles and displays Laravel validation errors (422).
-- **GraphQL Support**: Integrate with GraphQL mutations via the `gqlMutation` prop.
-- **Checkbox Support**: Easily handle boolean or multiple-choice fields with `type: 'checkbox'`.
 - **Modern Reactivity**: Built using Vue 3.4's `defineModel` for clean, conflict-free two-way binding.
 
 ```html

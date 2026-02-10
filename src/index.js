@@ -26,7 +26,6 @@ import shRepo from './lib/repo/helpers/ShRepo.js'
 import shStorage from './lib/repo/repositories/ShStorage.js'
 import ShFrontend from './lib/plugins/ShFrontend.js'
 import Countries from './lib/repo/helpers/countries.js'
-import shGql from './lib/repo/graphql/shGql.js'
 import useShFetch from './lib/repo/composables/useShFetch'
 
 export {
@@ -57,7 +56,6 @@ export {
     ShRoutePopups,
     ShQueryPopups,
     ShRange,
-    shGql,
     ShCardLayout,
     useShFetch
 }

@@ -2,7 +2,6 @@ import Axios from 'axios'
 import shstorage from '../repositories/ShStorage.js'
 import ShSession from './ShSession.js'
 
-const graphQlEndpoint = 'sh-ql'
 // eslint-disable-next-line no-undef
 let axios
 
@@ -116,26 +115,12 @@ function doPatch(endPoint, data, extraConfig) {
 
 }
 
-function graphQlQuery(query) {
-    const data = {
-        query
-    }
-    return doGet(graphQlEndpoint, data)
-}
 
-function graphQlMutate(mutation) {
-    const data = {
-        query: `mutation ${mutation}`
-    }
-    return doPost(graphQlEndpoint, data)
-}
 
 export default {
     doGet,
     doPost,
-    graphQlQuery,
     doDelete,
     doPut,
-    doPatch,
-    graphQlMutate
+    doPatch
 }

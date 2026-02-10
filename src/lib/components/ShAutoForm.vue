@@ -107,10 +107,6 @@ const props = defineProps({
     type: Array,
     required: false
   },
-  gqlMutation: {
-    type: String,
-    required: false
-  },
   required: {
     type: Array,
     required: false
@@ -319,34 +315,16 @@ const submitForm = async (e) => {
 
   emit('preSubmit', data)
 
-  // Handle GraphQL mutation
-  if (props.gqlMutation) {
-    const selectFields = Object.keys(data)
-    let args = selectFields
-      .filter(key => data[key])
-      .map(key => `${key}: "${data[key]}"`)
-      .join(', ')
+  // Handle REST API
+  const method = props.method === 'put'
+    ? shApis.doPut
+    : props.method === 'delete'
+      ? shApis.doDelete
+      : shApis.doPost
 
-    if (args) {
-      args = `(${args})`
-    }
-
-    const mutation = `{\n${props.gqlMutation}${args} {\n${selectFields.join('\n')}\n}\n}`
-    shApis.graphQlMutate(mutation)
-      .then(handleSuccessRequest)
-      .catch(handleFailedRequest)
-  } else {
-    // Handle REST API
-    const method = props.method === 'put'
-      ? shApis.doPut
-      : props.method === 'delete'
-        ? shApis.doDelete
-        : shApis.doPost
-
-    method(props.action, data)
-      .then(handleSuccessRequest)
-      .catch(handleFailedRequest)
-  }
+  method(props.action, data)
+    .then(handleSuccessRequest)
+    .catch(handleFailedRequest)
 
   return false
 }

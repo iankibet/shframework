@@ -122,6 +122,10 @@ const props = defineProps({
   steps: {
     type: Array,
     required: false
+  },
+  hideButton: {
+    type: Boolean,
+    default: false
   }
 })
 const emit = defineEmits(['success', 'preSubmit', 'fieldChanged', 'formSubmitted', 'formError'])
@@ -606,7 +610,7 @@ onMounted(() => {
           <span class="sh-btn-icon">→</span>
         </button>
       </div>
-      <div v-if="isLastStep" :class="getElementClass('formGroup') + ' ms-auto'">
+      <div v-if="isLastStep && !hideButton" :class="getElementClass('formGroup') + ' ms-auto'">
         <button
           :style="{width: submitBtnWidth}"
           ref="submitBtn"

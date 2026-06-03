@@ -1,28 +1,31 @@
 <template>
   <div v-if="paginationStyle !== 'loadMore'">
-    <div class="record_count_body mb-3">
-      <span class="per_page_show">Showing</span>&nbsp;
-      <select
-        v-if="!show_custom_per_page"
-        class="select_per_page"
-        v-on:change="changePerPage"
-        v-model="per_page"
-      >
-        <option v-for="option in sortedPageOptions" :key="option" :value="option">{{  option }}</option>
-        <option value="custom">Custom</option>
-      </select>
-      <input
-        v-else
-        v-model.number="custom_per_page"
-        @change="applyCustomPerPage"
-        @keydown.enter.prevent="applyCustomPerPage"
-        @blur="cancelCustomPerPage"
-        type="number"
-        min="1"
-        class="custom_per_page"
-        placeholder="Per page"
-      >
-      <span class="record_counts"> Showing {{ pagination_data.record_count }} items</span>
+    <div class="record_count_body sh-pagination-summary mb-3">
+      <template v-if="!hideLoadMore">
+        <span class="per_page_show">Rows per page</span>
+        <select
+          v-if="!show_custom_per_page"
+          class="select_per_page"
+          v-on:change="changePerPage"
+          v-model="per_page"
+        >
+          <option v-for="option in sortedPageOptions" :key="option" :value="option">{{  option }}</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input
+          v-else
+          v-model.number="custom_per_page"
+          @change="applyCustomPerPage"
+          @keydown.enter.prevent="applyCustomPerPage"
+          @blur="cancelCustomPerPage"
+          type="number"
+          min="1"
+          class="custom_per_page"
+          placeholder="Per page"
+        >
+      </template>
+      <span v-if="!hideLoadMore && !hideCount" class="sh-pagination-divider">·</span>
+      <span v-if="!hideCount" class="record_counts">{{ summaryText }}</span>
     </div>
     <nav aria-label="Page navigation" v-if="pagination_data != null && pagination_data.end > 1">
       <ul class="pagination">
@@ -37,35 +40,36 @@
     </nav>
   </div>
   <div v-else>
-    <div class="record_count_body mb-2 text-center" v-if="!hideLoadMore">
-      <span class="per_page_show">Showing</span>&nbsp;
-      <select
-        v-if="!show_custom_per_page"
-        class="select_per_page"
-        v-on:change="changePerPage"
-        v-model="per_page"
-      >
-        <option v-for="option in sortedPageOptions" :key="option" :value="option">{{  option }}</option>
-        <option value="custom">Custom</option>
-      </select>
-      <input
-        v-else
-        v-model.number="custom_per_page"
-        @change="applyCustomPerPage"
-        @keydown.enter.prevent="applyCustomPerPage"
-        @blur="cancelCustomPerPage"
-        type="number"
-        min="1"
-        class="custom_per_page"
-        placeholder="Per page"
-      >
+    <div class="record_count_body sh-pagination-summary mb-2" v-if="!hideLoadMore || !hideCount">
+      <template v-if="!hideLoadMore">
+        <span class="per_page_show">Rows per page</span>
+        <select
+          v-if="!show_custom_per_page"
+          class="select_per_page"
+          v-on:change="changePerPage"
+          v-model="per_page"
+        >
+          <option v-for="option in sortedPageOptions" :key="option" :value="option">{{  option }}</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input
+          v-else
+          v-model.number="custom_per_page"
+          @change="applyCustomPerPage"
+          @keydown.enter.prevent="applyCustomPerPage"
+          @blur="cancelCustomPerPage"
+          type="number"
+          min="1"
+          class="custom_per_page"
+          placeholder="Per page"
+        >
+      </template>
+      <span v-if="!hideLoadMore && !hideCount" class="sh-pagination-divider">·</span>
+      <span v-if="!hideCount" class="record_counts">{{ summaryText }}</span>
     </div>
     <div class="text-center" v-if="this.pagination_data.loading === 1 && loadMore && hideLoadMore">
       <div class="spinner-border" role="status">
       </div>
-    </div>
-    <div class="text-center" v-if="!hideCount">
-      <span class="per_page_show">Showing {{ pagination_data.displayCount }} of {{ pagination_data.record_count }} items</span>
     </div>
     <div class="text-center" v-if="pagination_data.displayCount < pagination_data.record_count && !hideLoadMore">
       <button v-if="this.pagination_data.loading !== 1" class="btn btn-sm btn-primary mt-1" @click="loadMoreRecords">
@@ -134,6 +138,15 @@ export default {
     sortedPageOptions: function () {
       return [...this.pageOptions].sort((a, b) => a - b)
     },
+    summaryText: function () {
+      const total = Number(this.pagination_data.record_count || 0)
+      const shown = Number(this.pagination_data.displayCount || total)
+      const itemText = total === 1 ? 'item' : 'items'
+      if (this.paginationStyle === 'loadMore') {
+        return `${shown} of ${total} ${itemText}`
+      }
+      return `${total} ${itemText}`
+    },
     getActivePage: function () {
       return this.pagination_data.current
     },
@@ -184,9 +197,26 @@ export default {
 }
 </script>
 <style scoped>
+.sh-pagination-summary {
+  align-items: center;
+  color: #1f2937;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  line-height: 1.4;
+}
+
+.select_per_page {
+  width: auto;
+}
+
 .custom_per_page {
   width: 90px;
-  margin-left: 0.35rem;
-  margin-right: 0.35rem;
+}
+
+.sh-pagination-divider,
+.record_counts {
+  color: #64748b;
 }
 </style>

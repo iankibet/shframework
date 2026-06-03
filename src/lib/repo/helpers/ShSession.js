@@ -1,12 +1,11 @@
 import { DateTime } from 'luxon'
 import Swal from 'sweetalert2'
-import shRepo from '../helpers/ShRepo.js'
 import ShStorage from '../repositories/ShStorage.js'
 
 startSession()
 function logoutUser(){
   if(!sessionRestored()){
-    shRepo.signOutUser()
+    import('../helpers/ShRepo.js').then(({ default: shRepo }) => shRepo.signOutUser())
   } else {
     console.log('session has been restored in another tab')
   }

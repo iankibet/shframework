@@ -68,10 +68,27 @@ const emit = defineEmits(["rowSelected", "dataReloaded", "dataLoaded"]);
 // --- Injection
 const noRecordsComponent = inject("noRecordsComponent", NoRecords);
 
+const getTablePerPageStorageKey = () => {
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "server";
+  const tableSource = props.endPoint || props.query || props.cacheKey || "default";
+  return `sh_table_per_page_${url}_${tableSource}`
+    .replace(/[^a-z0-9]+/gi, "_")
+    .toLowerCase();
+};
+
+const getInitialPerPage = () => {
+  const savedPerPage = Number(shStorage.getItem(getTablePerPageStorageKey()));
+  if (savedPerPage > 0) return savedPerPage;
+  return Number(props.pageCount ?? shRepo.getShConfig("tablePerPage", 10));
+};
+
 // --- Local State
 const order_by = ref(props.orderBy);
 const order_method = ref(props.orderMethod);
-const per_page = ref(props.pageCount ?? shRepo.getShConfig("tablePerPage", 10));
+const per_page = ref(getInitialPerPage());
 const page = ref(1);
 const exactMatch = ref(false);
 const filter_value = ref("");
@@ -229,8 +246,9 @@ const changeKey = (key, value) => {
     order_by.value = value;
     order_method.value = order_method.value === "desc" ? "asc" : "desc";
   } else if (key === "per_page") {
-    per_page.value = value;
+    per_page.value = Number(value);
     page.value = 1;
+    shStorage.setItem(getTablePerPageStorageKey(), per_page.value);
   } else {
     // generic
     // support pagination component passing keys like 'page'
@@ -572,8 +590,12 @@ watch(
   () => reloadData(),
 );
 watch(
-  () => props.endPoint,
-  () => reloadData(),
+  () => [props.endPoint, props.query, props.cacheKey],
+  () => {
+    per_page.value = getInitialPerPage();
+    page.value = 1;
+    reloadData();
+  },
 );
 
 // optional proxy (for changeKey generic setter)
@@ -606,11 +628,15 @@ const stateProxy = reactive({
       </button>
     </div>
 
-    <div class="row" v-if="!hideSearch && (pagination_data?.end > 1 || filter_value.length > 0)">
+    <div class="row" v-if="!hideSearch || hasRange">
       <div
         class="col-12 mb-3 d-flex justify-content-between flex-column flex-md-row flex-lg-row"
       >
-        <div class="sh-search-bar input-group" :class="hasRange ? 'me-2' : ''">
+        <div
+          v-if="!hideSearch"
+          class="sh-search-bar input-group"
+          :class="hasRange ? 'me-2' : ''"
+        >
           <input
             @keydown="userTyping"
             @keyup="userTyping"
@@ -1009,7 +1035,7 @@ const stateProxy = reactive({
     </div>
 
     <pagination
-      v-if="pagination_data && (records.length > 0 || filter_value.length > 0)"
+      v-if="pagination_data"
       @loadMoreRecords="loadMoreRecords"
       :hide-load-more="hideLoadMore"
       :per-page="per_page"

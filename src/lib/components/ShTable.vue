@@ -130,6 +130,16 @@ const slots = useSlots();
 const hasDefaultSlot = computed(() => !!slots.default);
 const hasRecordsSlot = computed(() => !!slots.records);
 const hasEmptySlot = computed(() => !!slots.empty);
+const hasSearchTerm = computed(() => filter_value.value.length > 0);
+const isEmptyWithoutSearch = computed(() => {
+  return (
+    loading.value === "done" &&
+    pagination_data.value?.record_count === 0 &&
+    !hasSearchTerm.value
+  );
+});
+const showSearchControls = computed(() => !props.hideSearch && !isEmptyWithoutSearch.value);
+const showPaginationControls = computed(() => !isEmptyWithoutSearch.value);
 
 // --- Lifecycle
 onMounted(async () => {
@@ -628,12 +638,12 @@ const stateProxy = reactive({
       </button>
     </div>
 
-    <div class="row" v-if="!hideSearch || hasRange">
+    <div class="row" v-if="showSearchControls || hasRange">
       <div
         class="col-12 mb-3 d-flex justify-content-between flex-column flex-md-row flex-lg-row"
       >
         <div
-          v-if="!hideSearch"
+          v-if="showSearchControls"
           class="sh-search-bar input-group"
           :class="hasRange ? 'me-2' : ''"
         >
@@ -1035,7 +1045,7 @@ const stateProxy = reactive({
     </div>
 
     <pagination
-      v-if="pagination_data"
+      v-if="pagination_data && showPaginationControls"
       @loadMoreRecords="loadMoreRecords"
       :hide-load-more="hideLoadMore"
       :per-page="per_page"

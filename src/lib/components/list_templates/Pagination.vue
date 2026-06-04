@@ -1,13 +1,13 @@
 <template>
   <div v-if="paginationStyle !== 'loadMore'">
-    <div class="record_count_body sh-pagination-summary mb-3">
+    <div class="record_count_body sh-pagination-summary sh-pagination-summary-left mb-3">
       <template v-if="!hideLoadMore">
-        <span class="per_page_show">Rows per page</span>
+        <span class="per_page_show">Showing</span>
         <select
           v-if="!show_custom_per_page"
           class="select_per_page"
           v-on:change="changePerPage"
-          v-model="per_page"
+          v-model="visible_per_page"
         >
           <option v-for="option in sortedPageOptions" :key="option" :value="option">{{  option }}</option>
           <option value="custom">Custom</option>
@@ -24,8 +24,7 @@
           placeholder="Per page"
         >
       </template>
-      <span v-if="!hideLoadMore && !hideCount" class="sh-pagination-divider">·</span>
-      <span v-if="!hideCount" class="record_counts">{{ summaryText }}</span>
+      <span v-if="!hideCount" class="record_counts">of {{ summaryText }}</span>
     </div>
     <nav aria-label="Page navigation" v-if="pagination_data != null && pagination_data.end > 1">
       <ul class="pagination">
@@ -63,6 +62,7 @@ export default {
     return {
       current_page: this.pagination_data.current,
       per_page: Number(this.pagination_data.per_page),
+      visible_per_page: Number(this.pagination_data.per_page),
       custom_per_page: null,
       show_custom_per_page: false,
       loadingMore: 0,
@@ -70,9 +70,22 @@ export default {
     }
   },
   mounted(){
-    this.addPageOption(this.perPage)
+    this.syncVisiblePerPage()
+  },
+  watch: {
+    'pagination_data.per_page': 'syncVisiblePerPage',
+    'pagination_data.record_count': 'syncVisiblePerPage',
+    'pagination_data.displayCount': 'syncVisiblePerPage',
+    perPage: 'syncVisiblePerPage'
   },
   methods: {
+    syncVisiblePerPage: function () {
+      this.per_page = Number(this.pagination_data.per_page)
+      this.addPageOption(this.perPage)
+      this.addPageOption(this.per_page)
+      this.addPageOption(this.visiblePerPageValue)
+      this.visible_per_page = this.visiblePerPageValue
+    },
     addPageOption: function (value) {
       const option = Number(value)
       if (option > 0 && !this.pageOptions.includes(option)) {
@@ -83,11 +96,12 @@ export default {
       this.$emit('changeKey', key, value)
     },
     changePerPage: function () {
-      if (this.per_page === 'custom') {
+      if (this.visible_per_page === 'custom') {
         this.custom_per_page = null
         this.show_custom_per_page = true
         return
       }
+      this.per_page = Number(this.visible_per_page)
       this.addPageOption(this.per_page)
       this.$emit('changeKey', 'per_page', this.per_page)
     },
@@ -96,15 +110,16 @@ export default {
       if (customPerPage < 1) return
       this.addPageOption(customPerPage)
       this.per_page = customPerPage
-      this.custom_per_page = null
+      this.visible_per_page = customPerPage
       this.show_custom_per_page = false
       this.changePerPage()
+      this.custom_per_page = null
     },
     cancelCustomPerPage: function () {
       if (!this.show_custom_per_page) return
       if (this.custom_per_page) return
       this.show_custom_per_page = false
-      this.per_page = Number(this.pagination_data.per_page)
+      this.visible_per_page = this.visiblePerPageValue
     },
     loadMoreRecords: function () {
       this.$emit('loadMoreRecords', 'now')
@@ -112,16 +127,24 @@ export default {
   },
   computed: {
     sortedPageOptions: function () {
-      return [...this.pageOptions].sort((a, b) => a - b)
+      return [...this.pageOptions, this.visiblePerPageValue]
+        .filter((option, index, options) => options.indexOf(option) === index)
+        .sort((a, b) => a - b)
     },
     summaryText: function () {
       const total = Number(this.pagination_data.record_count || 0)
       const shown = Number(this.pagination_data.displayCount || total)
-      const itemText = total === 1 ? 'item' : 'items'
+      const itemText = total === 1 ? 'record' : 'records'
       if (this.paginationStyle === 'loadMore') {
         return `${shown} of ${total} ${itemText}`
       }
       return `${total} ${itemText}`
+    },
+    visiblePerPageValue: function () {
+      const total = Number(this.pagination_data.record_count || 0)
+      const perPage = Number(this.per_page)
+      if (total > 0 && perPage > total) return total
+      return perPage
     },
     getActivePage: function () {
       return this.pagination_data.current
@@ -181,6 +204,10 @@ export default {
   gap: 0.35rem;
   justify-content: center;
   line-height: 1.4;
+}
+
+.sh-pagination-summary-left {
+  justify-content: flex-start;
 }
 
 .select_per_page {

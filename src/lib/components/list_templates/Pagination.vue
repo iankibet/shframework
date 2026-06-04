@@ -40,31 +40,7 @@
     </nav>
   </div>
   <div v-else>
-    <div class="record_count_body sh-pagination-summary mb-2" v-if="!hideLoadMore || !hideCount">
-      <template v-if="!hideLoadMore">
-        <span class="per_page_show">Rows per page</span>
-        <select
-          v-if="!show_custom_per_page"
-          class="select_per_page"
-          v-on:change="changePerPage"
-          v-model="per_page"
-        >
-          <option v-for="option in sortedPageOptions" :key="option" :value="option">{{  option }}</option>
-          <option value="custom">Custom</option>
-        </select>
-        <input
-          v-else
-          v-model.number="custom_per_page"
-          @change="applyCustomPerPage"
-          @keydown.enter.prevent="applyCustomPerPage"
-          @blur="cancelCustomPerPage"
-          type="number"
-          min="1"
-          class="custom_per_page"
-          placeholder="Per page"
-        >
-      </template>
-      <span v-if="!hideLoadMore && !hideCount" class="sh-pagination-divider">·</span>
+    <div class="record_count_body sh-pagination-summary mb-2" v-if="!hideCount">
       <span v-if="!hideCount" class="record_counts">{{ summaryText }}</span>
     </div>
     <div class="text-center" v-if="this.pagination_data.loading === 1 && loadMore && hideLoadMore">

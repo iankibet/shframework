@@ -29,6 +29,9 @@ import Countries from './lib/repo/helpers/countries.js'
 import shGql from './lib/repo/graphql/shGql.js'
 import useShFetch from './lib/repo/composables/useShFetch'
 
+// New core APIs surfaced for v6 consumers
+export { useAuth, ShCore, createShCore, useStreamline, getActionUrl } from '@iankibetsh/sh-core'
+
 export {
     ShForm,
     ShCanvas,

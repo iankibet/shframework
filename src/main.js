@@ -52,6 +52,7 @@ const UserdetailsColumns = [
   }
 ]
 app.use(ShFrontend,{
+  baseApiUrl: import.meta.env.VITE_APP_API_URL,
   sessionTimeout: 400,
   defaultRange: 'All Time',
   loginUrl: '/sh-auth',
@@ -72,11 +73,7 @@ app.use(ShFrontend,{
 })
 
 app.use(streamline, {
-    streamlineHeaders: {
-        // 'Content-Type': 'application/json',
-        // 'Accept': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
-    },
+    // auth headers are handled by sh-core's API client now
     streamlineUrl: import.meta.env.VITE_APP_API_URL + 'streamline',
     enableCache: true,
 })

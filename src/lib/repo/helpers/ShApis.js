@@ -1,20 +1,3 @@
-import { shApis, initApi } from '@iankibetsh/sh-core'
-
-const graphQlEndpoint = 'sh-ql'
-
-// GraphQL helpers stay in shframework; sh-core only ships the REST layer
-function graphQlQuery (query) {
-    return shApis.doGet(graphQlEndpoint, { query })
-}
-
-function graphQlMutate (mutation) {
-    return shApis.doPost(graphQlEndpoint, { query: `mutation ${mutation}` })
-}
-
-export { initApi }
-
-export default {
-    ...shApis,
-    graphQlQuery,
-    graphQlMutate
-}
+// GraphQL helpers were removed upstream (sh-ql infrastructure dropped);
+// the REST layer lives in sh-core
+export { shApis as default, initApi } from '@iankibetsh/sh-core'

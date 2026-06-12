@@ -12,6 +12,7 @@ import SelectInput from './form-components/SelectInput.vue'
 import PasswordInput from './form-components/PasswordInput.vue'
 import ShSuggest from './form-components/ShSuggest.vue'
 import DateInput from './form-components/DateInput.vue'
+import CheckboxInput from './form-components/CheckboxInput.vue'
 const props = defineProps({
   action: {
     type: String,
@@ -106,10 +107,6 @@ const props = defineProps({
     type: Array,
     required: false
   },
-  gqlMutation: {
-    type: String,
-    required: false
-  },
   required: {
     type: Array,
     required: false
@@ -121,6 +118,10 @@ const props = defineProps({
   steps: {
     type: Array,
     required: false
+  },
+  hideSubmitButton: {
+    type: Boolean,
+    default: false
   }
 })
 const emit = defineEmits(['success', 'preSubmit', 'fieldChanged', 'formSubmitted', 'formError'])
@@ -176,13 +177,17 @@ const getFieldComponent = (fieldObj) => {
     number: formComponents.number ?? NumberInput,
     select: formComponents.select ?? SelectInput,
     password: formComponents.password ?? PasswordInput,
-    date: formComponents.date ?? DateInput
+    date: formComponents.date ?? DateInput,
+    checkbox: formComponents.checkbox ?? CheckboxInput
   }
 
   // Return component based on explicit type
   if (fieldObj.type) {
     if (fieldObj.type === 'suggest' || fieldObj.type === 'suggests') {
       return ShSuggest
+    }
+    if (fieldObj.type === 'checkbox' || fieldObj.type === 'checkboxes') {
+      return CheckboxInput
     }
     return componentMap[fieldObj.type] ?? componentMap.text
   }
@@ -310,34 +315,16 @@ const submitForm = async (e) => {
 
   emit('preSubmit', data)
 
-  // Handle GraphQL mutation
-  if (props.gqlMutation) {
-    const selectFields = Object.keys(data)
-    let args = selectFields
-      .filter(key => data[key])
-      .map(key => `${key}: "${data[key]}"`)
-      .join(', ')
+  // Handle REST API
+  const method = props.method === 'put'
+    ? shApis.doPut
+    : props.method === 'delete'
+      ? shApis.doDelete
+      : shApis.doPost
 
-    if (args) {
-      args = `(${args})`
-    }
-
-    const mutation = `{\n${props.gqlMutation}${args} {\n${selectFields.join('\n')}\n}\n}`
-    shApis.graphQlMutate(mutation)
-      .then(handleSuccessRequest)
-      .catch(handleFailedRequest)
-  } else {
-    // Handle REST API
-    const method = props.method === 'put'
-      ? shApis.doPut
-      : props.method === 'delete'
-        ? shApis.doDelete
-        : shApis.doPost
-
-    method(props.action, data)
-      .then(handleSuccessRequest)
-      .catch(handleFailedRequest)
-  }
+  method(props.action, data)
+    .then(handleSuccessRequest)
+    .catch(handleFailedRequest)
 
   return false
 }
@@ -601,7 +588,7 @@ onMounted(() => {
           <span class="sh-btn-icon">→</span>
         </button>
       </div>
-      <div v-if="isLastStep" :class="getElementClass('formGroup') + ' ms-auto'">
+      <div v-if="isLastStep && !hideSubmitButton" :class="getElementClass('formGroup') + ' ms-auto'">
         <button
           :style="{width: submitBtnWidth}"
           ref="submitBtn"

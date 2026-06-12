@@ -19,6 +19,7 @@ const props = defineProps(['action',
   'files',
   'phones',
   'numbers',
+  'hideButton',
   'customComponent','modalTitle','class','successMessage', 'modalId'])
 const emit = defineEmits(['success','fieldChanged','formSubmitted','formError','modalId'])
 const formProps = ref(props)
@@ -53,11 +54,12 @@ const cleanedProp = computed(()=>{
   const p = {...props}
   delete p.class
   delete p.modalId
+  delete p.hideButton
   return p
 })
 </script>
 <template>
-  <a :class="btnClass" :href="'#' + realModalId" data-bs-toggle="modal">
+  <a v-show="!hideButton" :class="btnClass" :href="'#' + realModalId" data-bs-toggle="modal">
     <slot></slot>
     <teleport to="body">
       <sh-modal :modal-size="modalSize" :modal-id="realModalId" :modal-title="modalTitle">

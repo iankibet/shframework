@@ -1,4 +1,5 @@
 import { shRepo as coreRepo, shApis } from '@iankibetsh/sh-core'
+import shIndexedDB from '../repositories/ShIndexedDB.js'
 import { Modal, Offcanvas } from 'bootstrap'
 
 // Bootstrap/DOM-specific helpers live here; everything else comes from sh-core
@@ -61,6 +62,10 @@ const hideOffCanvas = offCanvasId => {
     }
 }
 
+const flushCache = () => {
+    return shIndexedDB.clear()
+}
+
 export default {
     ...coreRepo,
     getMenuCount,
@@ -68,5 +73,6 @@ export default {
     showModal,
     hideModal,
     showOffCanvas,
-    hideOffCanvas
+    hideOffCanvas,
+    flushCache
 }

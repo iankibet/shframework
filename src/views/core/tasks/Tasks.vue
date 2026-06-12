@@ -101,8 +101,8 @@ const clicked = ()=>{
         <sh-range @range-selected="rangeSelected"/>
         <sh-table
             :headers="['id',showUser,'name','description','phone','created_at']"
-            cache-key="tasks"
             :query="query"
+            row-link="/tasks/task/{id}"
             :actions="{
             label: '...',
             actions: [

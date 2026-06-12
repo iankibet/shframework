@@ -22,6 +22,9 @@ A robust table component that handles server-side pagination, searching, and cus
 - **Auto-Label Generation**: Automatically generates human-readable labels from keys if not explicitly provided (e.g., `user.first_name` becomes "First Name").
 - **Named Slots for Custom Formatting**: Use named slots for columns to provide custom formatting (e.g., `<template #age="{ row }">`).
 - **Multi-Action Support**: Enable row selection and collective operations with a floating action bar.
+- **Caching & Background Loading**: Uses IndexedDB to cache data. Shows cached data immediately while fetching fresh data in the background (enabled via `enableTableCache` config or `:cache="true"` prop).
+- **User-Specific Caching**: Automatically prefixes cache keys with user identifiers (e.g., `id`, `email`) to ensure data isolation between users. Configure via `cacheUserFields`.
+- **Metadata Tracking**: Tracks cache source URLs and timestamps in a dedicated `cache_metadata` store for better auditability.
 - **Links & Actions**: Easily define column links and action buttons.
 
 ```html
@@ -63,13 +66,18 @@ The flagship component for generating complex forms from simple configurations.
 - **Auto-Detection**: Infers input types from field names (email, phone, date, etc.).
 - **Multi-Step Support**: Break long forms into logical steps with progress indicators.
 - **Validation**: Seamlessly handles and displays Laravel validation errors (422).
-- **GraphQL Support**: Integrate with GraphQL mutations via the `gqlMutation` prop.
+- **Conditional Visibility**: Hide the submit button using `:hide-submit-button="true"`.
+- **Modern Reactivity**: Built using Vue 3.4's `defineModel` for clean, conflict-free two-way binding.
 
 ```html
 <sh-auto-form
-  :fields="['name', 'email', 'password', 'gender']"
-  :required="['name', 'email']"
-  action="auth/register"
+  :fields="[
+    { field: 'name', label: 'Name', required: true },
+    { field: 'email', type: 'email', label: 'Email', required: true },
+    { field: 'password', type: 'password', label: 'Password' },
+    { field: 'gender', type: 'select', label: 'Gender' }
+  ]"
+  :action="getActionUrl('register')"
   :successCallback="onRegistered"
 />
 ```
@@ -86,8 +94,11 @@ A convenience component that wraps a trigger button, a Bootstrap modal, and an `
 <sh-modal-form
   modal-id="addTaskModal"
   modal-title="Create New Task"
-  :fields="['title', 'description']"
-  action="tasks/store"
+  :fields="[
+    { field: 'title', label: 'Task Title', required: true },
+    { field: 'description', type: 'textarea', label: 'Description' }
+  ]"
+  :action="getActionUrl('storeTask')"
 >
   Add Task
 </sh-modal-form>
@@ -111,6 +122,7 @@ A collection of common UI and data utilities.
 - `shRepo.runPlainRequest(url, message)`: Post request with a confirmation prompt.
 - `shRepo.runSilentRequest(url)`: Direct post request without prompt.
 - `shRepo.showToast(message, type)`: Displays a sweetalert2 toast.
+- `shRepo.flushCache()`: Clears all IndexedDB cache data.
 - `shRepo.swalSuccess(message)` / `shRepo.swalError(message)`: Standard success/error popups.
 
 ### shUser (State Management)

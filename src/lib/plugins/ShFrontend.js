@@ -1,4 +1,4 @@
-import { ShCore } from '@iankibetsh/sh-core'
+import { ShCore, shStorage } from '@iankibetsh/sh-core'
 import ShUserProfile from '../components/core/auth/ShUserProfile.vue'
 import Departments from '../components/core/Departments/Departments.vue'
 import Department from '../components/core/Departments/department/Department.vue'
@@ -30,6 +30,7 @@ const ShFrontend = {
     const noRecordsComponent = options.noRecordsComponent ?? NoRecords
     const registrationFields = options.registrationFields ?? ['name','email','phone','password','password_confirmation']
     const AuthComponent = options.authComponent ?? ShAuth
+    const cacheUserFields = options.cacheUserFields ?? ['id']
 
     app.provide('registrationFields', registrationFields)
     app.provide('registerTitle', registerTitle)
@@ -40,6 +41,11 @@ const ShFrontend = {
     app.provide('formComponents', options.shFormComponents ?? {})
     app.provide('shFormElementClasses', defaultFormElementClasses)
     app.provide('noRecordsComponent', noRecordsComponent)
+    app.provide('cacheUserFields', cacheUserFields)
+
+    // sh-core's setShConfig only persists scalars, but ShIndexedDB reads
+    // cacheUserFields (an array) from the stored ShConfig for cache prefixing
+    shStorage.setItem('ShConfig', { ...(shStorage.getItem('ShConfig') ?? {}), cacheUserFields })
 
     if (options.router) {
       options.router.addRoute({

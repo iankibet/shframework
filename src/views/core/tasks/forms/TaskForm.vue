@@ -3,7 +3,6 @@
 import ShAutoForm from '@/lib/components/ShAutoForm.vue'
 import { useRoute } from 'vue-router'
 import { onMounted, ref } from 'vue'
-import shGql from '@/lib/repo/graphql/shGql.js'
 import shRepo from '@/lib/repo/helpers/ShRepo.js'
 import { ShModalForm, ShSuggest, useAppStore } from '@'
 import ShForm from '@/lib/components/ShForm.vue'
@@ -11,22 +10,8 @@ import SuggestTemplate from '@/views/core/tasks/forms/SuggestTemplate.vue'
 const route = useRoute()
 const id = route.params.id
 const editTask = ref(null)
-const mutation = ref('addTask')
+// Task fetching logic removed
 
-const appStore = useAppStore()
-if(id){
-  mutation.value = 'updateTask'
-  shGql.query(`{
-    task (id: ${id}) {
-      id
-      name
-      description
-      phone
-    }
-    }`).then(res=>{
-    editTask.value = res.task
-  })
-}
 onMounted(()=>{
   // shRepo.showToast('Hello','success', {position: 'top-start'})
 })
@@ -77,7 +62,7 @@ const fields = [
   // task_id: 2,
   // name: 'Task 1'
 
-}" @field-changed="fieldChanged" @success="appStore.refresh()" success-message="Task added successfully" :fields="fields" :gqlMutation="mutation"></sh-auto-form>
+}" @field-changed="fieldChanged" @success="appStore.refresh()" success-message="Task added successfully" :fields="fields" action="tasks"></sh-auto-form>
 </template>
 
 <style scoped>

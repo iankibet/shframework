@@ -23,6 +23,7 @@ import apis from "../repo/helpers/ShApis";
 import helpers from "../repo/helpers/ShRepo.js";
 import shRepo from "../repo/helpers/ShRepo.js";
 import shStorage from "../repo/repositories/ShStorage";
+import shIndexedDB from "../repo/repositories/ShIndexedDB";
 
 // --- Props / Emits
 const props = defineProps({
@@ -56,6 +57,10 @@ const props = defineProps({
   selectedRange: [Object, null],
   noRecordsMessage: [String, null],
   multiActions: { type: Array, default: () => [] },
+  // Caching configuration: true to enable, false to disable. If null, respects global configure 'enableTableCache'
+  cache: { type: Boolean, default: null },
+  // Dynamic link for the entire row. Supports placeholders like '/user/{id}'
+  rowLink: [String, null],
 });
 
 const emit = defineEmits(["rowSelected", "dataReloaded", "dataLoaded"]);
@@ -63,10 +68,27 @@ const emit = defineEmits(["rowSelected", "dataReloaded", "dataLoaded"]);
 // --- Injection
 const noRecordsComponent = inject("noRecordsComponent", NoRecords);
 
+const getTablePerPageStorageKey = () => {
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "server";
+  const tableSource = props.endPoint || props.query || props.cacheKey || "default";
+  return `sh_table_per_page_${url}_${tableSource}`
+    .replace(/[^a-z0-9]+/gi, "_")
+    .toLowerCase();
+};
+
+const getInitialPerPage = () => {
+  const savedPerPage = Number(shStorage.getItem(getTablePerPageStorageKey()));
+  if (savedPerPage > 0) return savedPerPage;
+  return Number(props.pageCount ?? shRepo.getShConfig("tablePerPage", 10));
+};
+
 // --- Local State
 const order_by = ref(props.orderBy);
 const order_method = ref(props.orderMethod);
-const per_page = ref(props.pageCount ?? shRepo.getShConfig("tablePerPage", 10));
+const per_page = ref(getInitialPerPage());
 const page = ref(1);
 const exactMatch = ref(false);
 const filter_value = ref("");
@@ -108,9 +130,19 @@ const slots = useSlots();
 const hasDefaultSlot = computed(() => !!slots.default);
 const hasRecordsSlot = computed(() => !!slots.records);
 const hasEmptySlot = computed(() => !!slots.empty);
+const hasSearchTerm = computed(() => filter_value.value.length > 0);
+const isEmptyWithoutSearch = computed(() => {
+  return (
+    loading.value === "done" &&
+    pagination_data.value?.record_count === 0 &&
+    !hasSearchTerm.value
+  );
+});
+const showSearchControls = computed(() => !props.hideSearch && !isEmptyWithoutSearch.value);
+const showPaginationControls = computed(() => !isEmptyWithoutSearch.value);
 
 // --- Lifecycle
-onMounted(() => {
+onMounted(async () => {
   if (props.headers) tableHeaders.value = props.headers;
 
   if (props.actions?.actions) {
@@ -119,7 +151,7 @@ onMounted(() => {
     });
   }
 
-  if (props.cacheKey) setCachedData();
+  if (shouldCache.value) await setCachedData();
 
   reloadData();
 
@@ -197,12 +229,26 @@ const canvasClosed = () => {
   selectedRecord.value = null;
 };
 
+const router = useRouter();
 const rowSelected = (row) => {
   selectedRecord.value = null;
   setTimeout(() => {
     selectedRecord.value = row;
     emit("rowSelected", row);
+    if (props.rowLink) {
+      router.push(replaceRowLink(props.rowLink, row));
+    }
   }, 100);
+};
+
+const replaceRowLink = (p, obj) => {
+  let path = p;
+  const matches = path.match(/\{(.*?)\}/g);
+  matches?.forEach((k) => {
+    const key = k.replace("{", "").replace("}", "");
+    path = path.replace(`{${key}}`, obj[key]);
+  });
+  return path;
 };
 
 const changeKey = (key, value) => {
@@ -210,8 +256,9 @@ const changeKey = (key, value) => {
     order_by.value = value;
     order_method.value = order_method.value === "desc" ? "asc" : "desc";
   } else if (key === "per_page") {
-    per_page.value = value;
+    per_page.value = Number(value);
     page.value = 1;
+    shStorage.setItem(getTablePerPageStorageKey(), per_page.value);
   } else {
     // generic
     // support pagination component passing keys like 'page'
@@ -364,22 +411,54 @@ const exportData = () => {
     });
 };
 
-const setCachedData = () => {
-  if (props.cacheKey) {
-    records.value = shStorage.getItem("sh_table_cache_" + props.cacheKey, null);
+// Attempts to load data from IndexedDB before API call
+const setCachedData = async () => {
+  if (shouldCache.value) {
+    const cached = await shIndexedDB.getItem(computedCacheKey.value, null);
+    if (cached) {
+      records.value = cached;
+      // Set to 'done' immediately to show cached data without initial spinner
+      loading.value = "done";
+    }
   }
 };
 
 const reloadNotifications = () => reloadData();
 
+// Determines if caching should be active based on component props or global configuration
+const shouldCache = computed(() => {
+  if (props.cache !== null) return props.cache;
+  return shRepo.getShConfig("enableTableCache", false);
+});
+
+// Generates a unique, slug-safe key for IndexedDB storage
+const computedCacheKey = computed(() => {
+  if (props.cacheKey) return "sh_table_cache_" + props.cacheKey;
+  let keyBase = props.endPoint || props.query || "default";
+  
+  // Include date range in the key if active
+  if (from.value || to.value || period.value) {
+    keyBase += `_${from.value}_${to.value}_${period.value}`;
+  }
+  
+  const safeBase = keyBase.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+  return "sh_table_cache_" + safeBase;
+});
+
 // Main loader
+// Main data fetcher. Handles background updates when cache is present
 const reloadData = (newPage, append) => {
   if (typeof newPage !== "undefined") page.value = newPage;
 
-  if (props.cacheKey && records.value !== null) {
+  // If we have cached data and not searching, we don't show the initial loading spinner
+  if (shouldCache.value && records.value && records.value.length > 0 && !filter_value.value) {
     loading.value = "done";
   } else if (!append) {
     loading.value = "loading";
+    // Clear records when searching to ensure we show fresh results
+    if (filter_value.value) {
+      records.value = [];
+    }
   }
 
   let data = {
@@ -418,8 +497,8 @@ const reloadData = (newPage, append) => {
       const response = req.data.data;
       emit("dataLoaded", response);
 
-      if (page.value < 2 && props.cacheKey) {
-        shStorage.setItem("sh_table_cache_" + props.cacheKey, response.data);
+      if (page.value < 2 && shouldCache.value) {
+        shIndexedDB.setItem(computedCacheKey.value, response.data, { url: endPoint });
       }
 
       pagination_data.value = {
@@ -521,8 +600,12 @@ watch(
   () => reloadData(),
 );
 watch(
-  () => props.endPoint,
-  () => reloadData(),
+  () => [props.endPoint, props.query, props.cacheKey],
+  () => {
+    per_page.value = getInitialPerPage();
+    page.value = 1;
+    reloadData();
+  },
 );
 
 // optional proxy (for changeKey generic setter)
@@ -555,11 +638,15 @@ const stateProxy = reactive({
       </button>
     </div>
 
-    <div class="row" v-if="!hideSearch && (records.length > 0 || !hasEmptySlot || filter_value.length > 0)">
+    <div class="row" v-if="showSearchControls || hasRange">
       <div
         class="col-12 mb-3 d-flex justify-content-between flex-column flex-md-row flex-lg-row"
       >
-        <div class="sh-search-bar input-group" :class="hasRange ? 'me-2' : ''">
+        <div
+          v-if="showSearchControls"
+          class="sh-search-bar input-group"
+          :class="hasRange ? 'me-2' : ''"
+        >
           <input
             @keydown="userTyping"
             @keyup="userTyping"
@@ -590,15 +677,15 @@ const stateProxy = reactive({
     </div>
 
     <template v-if="hasDefaultSlot">
-      <div class="text-center" v-if="loading === 'loading'">
+      <div class="text-center" v-if="loading === 'loading' && records.length === 0">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-      <div v-else-if="loading === 'error'" class="alert alert-danger">
+      <div v-else-if="loading === 'error' && records.length === 0" class="alert alert-danger">
         <span>{{ loading_error }}</span>
       </div>
-      <template v-if="loading === 'done'">
+      <template v-if="loading === 'done' || records.length > 0">
         <template v-if="records.length === 0">
           <slot name="empty" v-if="hasEmptySlot"></slot>
           <div v-else-if="!hasRecordsSlot" class="text-center bg-primary-light px-2 py-1 rounded no_records_div">
@@ -612,18 +699,18 @@ const stateProxy = reactive({
     </template>
 
     <template v-else-if="hasRecordsSlot">
-      <div class="text-center" v-if="loading === 'loading' && !cacheKey">
+      <div class="text-center" v-if="loading === 'loading' && records.length === 0">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
       <div
-        v-else-if="loading === 'error' && !cacheKey"
+        v-else-if="loading === 'error' && records.length === 0"
         class="alert alert-danger error-loading"
       >
         <span>{{ loading_error }}</span>
       </div>
-      <template v-if="loading === 'done' || cacheKey">
+      <template v-if="loading === 'done' || records.length > 0">
         <template v-if="!records || records.length === 0">
           <slot name="empty" v-if="hasEmptySlot"></slot>
           <component :is="noRecordsComponent" v-else>
@@ -689,7 +776,7 @@ const stateProxy = reactive({
       </thead>
 
       <tbody class="sh-tbody">
-        <tr class="text-center" v-if="loading === 'loading'">
+        <tr class="text-center" v-if="loading === 'loading' && records.length === 0">
           <td
             :colspan="
               activeMultiActions.length > 0
@@ -707,7 +794,7 @@ const stateProxy = reactive({
 
         <tr
           class="text-center alert alert-danger"
-          v-else-if="loading === 'error'"
+          v-else-if="loading === 'error' && records.length === 0"
         >
           <td
             :colspan="
@@ -742,7 +829,7 @@ const stateProxy = reactive({
           v-else-if="loading === 'done'"
           v-for="(record, index) in records"
           :key="record.id"
-          :class="record.class"
+          :class="[record.class, props.rowLink ? 'cursor-pointer' : '']"
           @click="rowSelected(record)"
         >
           <td v-if="activeMultiActions.length > 0" @click.stop>
@@ -822,6 +909,7 @@ const stateProxy = reactive({
         <template v-for="(record, index) in records" :key="record.id">
           <div
             class="single-mobile-req bg-light p-3"
+            :class="props.rowLink ? 'cursor-pointer' : ''"
             @click="rowSelected(record)"
           >
             <div v-if="activeMultiActions.length > 0" class="mb-2" @click.stop>
@@ -957,7 +1045,7 @@ const stateProxy = reactive({
     </div>
 
     <pagination
-      v-if="pagination_data && (records.length > 0 || !hasEmptySlot || filter_value.length > 0)"
+      v-if="pagination_data && showPaginationControls"
       @loadMoreRecords="loadMoreRecords"
       :hide-load-more="hideLoadMore"
       :per-page="per_page"
@@ -1057,5 +1145,8 @@ const stateProxy = reactive({
   transform: translateX(-50%);
   z-index: 1050;
   min-width: 300px;
+}
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

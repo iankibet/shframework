@@ -165,4 +165,52 @@ label: 'Action',
     }"
 ```
 
-In the above, canvas component is the imported canvas component
+### `cache`
+
+- Type: `boolean | null`
+- Default: `null`
+- Details:
+  Explicitly enables or disables caching for this table. If set to `null` (default), it respects the global `enableTableCache` setting in the `ShFrontend` plugin configuration.
+
+### `row-link`
+
+- Type: `string`
+- Default: `none`
+- Details:
+  Defines a clickable link for the entire row. Supports dynamic placeholders using curly braces.
+
+  Example:
+
+  ```html
+  <sh-table
+    :headers="['id', 'name']"
+    end-point="tasks/list"
+    row-link="/tasks/task/{id}"
+  />
+  ```
+
+  In the above example, `{id}` will be replaced with the actual `id` from the row data.
+
+### `cache-key`
+
+- Type: `string`
+- Default: `none` (auto-generated)
+- Details:
+  A unique key used to store the table data in IndexedDB. If not provided, it is automatically generated based on the `end-point` or `query`.
+
+---
+
+## Caching & Background Loading
+
+`sh-table` uses a modern caching mechanism powered by **IndexedDB**.
+
+1. **Global Configuration**: Enable it for all tables in your `main.js`:
+   ```javascript
+   app.use(ShFrontend, {
+     enableTableCache: true,
+     // ...
+   });
+   ```
+2. **Instant Display**: When a table is loaded, it immediately checks for cached data. If found, it displays the data instantly, hiding the initial loading spinner.
+3. **Background Update**: While the cached data is displayed, the component fetches fresh data from the backend in the background and updates the table/cache automatically.
+4. **Search Behavior**: When a search is initiated, the component ignores cached data, clears the table, and shows a loading spinner to ensure the user receives fresh, accurate search results.

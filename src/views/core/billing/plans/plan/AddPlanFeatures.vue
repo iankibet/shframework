@@ -1,7 +1,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import {ShSilentAction,ShDropDownForm} from '@iankibetsh/shframework'
-import { useStreamline } from '@iankibetsh/vue-streamline'
+import { useStreamline } from '@iankibetsh/sh-core'
 import SkeletonFull from '@/views/layouts/skeletons/SkeletonFull.vue'
 import { useAppStore } from '@iankibetsh/shframework'
 

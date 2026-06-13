@@ -1,7 +1,7 @@
 <script setup>
 import { ref, useId } from 'vue'
 import { ShModalForm, shRepo, ShTable, useAppStore } from '@iankibetsh/shframework'
-import { useStreamline } from '@iankibetsh/vue-streamline'
+import { useStreamline } from '@iankibetsh/sh-core'
 import CheckBox from '@/components/form-components/CheckBox.vue'
 
 const {getActionUrl} = useStreamline('billing/plans/plans')

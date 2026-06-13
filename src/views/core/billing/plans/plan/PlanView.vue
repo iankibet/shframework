@@ -1,6 +1,6 @@
 <script setup>
 import { ShTabs } from '@iankibetsh/shframework'
-import {useStreamline} from '@iankibetsh/vue-streamline'
+import {useStreamline} from '@iankibetsh/sh-core'
 import { useRoute } from 'vue-router'
 import SkeletonFull from '@/views/layouts/skeletons/SkeletonFull.vue'
 import { ref, watch } from 'vue'

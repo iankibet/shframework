@@ -2,7 +2,7 @@
 import { useRoute, useRouter } from 'vue-router'
 import { watch, ref, markRaw } from 'vue'
 import { Modal, Offcanvas } from 'bootstrap'
-import _ from 'lodash'
+import { uniqueId } from '../../utils/strings.js'
 import ShModal from '../ShModal.vue'
 import ShCanvas from '../ShCanvas.vue'
 import { storeToRefs } from 'pinia'
@@ -10,8 +10,8 @@ import { useAppStore } from './../../repo/stores/ShApp.js'
 const {refreshKey} = storeToRefs(useAppStore())
 const route = useRoute()
 const popUp = ref(route.meta.popUp)
-const modalId = _.uniqueId('modal_')
-const canvasId = _.uniqueId('canvas_')
+const modalId = uniqueId('modal_')
+const canvasId = uniqueId('canvas_')
 const componentView = ref(null)
 const parent = ref(null)
 const router = useRouter()

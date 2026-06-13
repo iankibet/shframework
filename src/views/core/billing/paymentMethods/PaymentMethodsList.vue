@@ -1,5 +1,5 @@
 <script setup>
-import {useStreamline} from '@iankibetsh/vue-streamline'
+import {useStreamline} from '@iankibetsh/sh-core'
 import { ShModalForm, useAppStore, ShTable, shRepo } from '@iankibetsh/shframework'
 import { ref, useId } from 'vue'
 

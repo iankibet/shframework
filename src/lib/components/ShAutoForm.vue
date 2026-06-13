@@ -1,6 +1,6 @@
 <script setup>
 import { computed, inject, onMounted, ref, useTemplateRef, watch } from 'vue'
-import _ from 'lodash'
+import { startCase, kebabCase } from '../utils/strings.js'
 import shApis from '../repo/helpers/ShApis.js'
 import shRepo from '../repo/helpers/ShRepo.js'
 import PhoneInput from './form-components/PhoneInput.vue'
@@ -242,12 +242,12 @@ const closeModal = () => {
 const getLabel = field =>
   props.labels?.[field] !== undefined
     ? props.labels[field]
-    : _.startCase(_.camelCase(field))
+    : startCase(field)
 
 const getElementClass = section =>
   props.formClasses?.[section] ??
   shFormElementClasses[section] ??
-  _.snakeCase(section).replace(/_/gi, '-')
+  kebabCase(section)
 
 const getComponentClass = field => {
   const baseClass = getElementClass('formControl')

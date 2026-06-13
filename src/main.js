@@ -2,7 +2,7 @@ import /* Vue, */ { createApp } from 'vue'
 import ShFrontend from './lib/plugins/ShFrontend.js'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import 'sweetalert2/dist/sweetalert2.css'
+import '@iankibetsh/sh-core/style.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import 'bootstrap'
@@ -16,7 +16,6 @@ import './views/assets/main.css'
 import PasswordInput from './lib/components/form-components/PasswordInput.vue'
 import ViewTaskPopup from './views/popups/ViewTaskPopup.vue'
 import NoRecords from './lib/components/others/NoRecords.vue'
-import {streamline} from '@iankibetsh/vue-streamline'
 
 const app = createApp(App)
 app.use(createPinia())
@@ -71,13 +70,10 @@ app.use(ShFrontend,{
   shFormComponents,
   UserdetailsColumns,
   userEndpoint: 'auth/user',
-  cacheUserFields: ['id']
-})
-
-app.use(streamline, {
-    // auth headers are handled by sh-core's API client now
-    streamlineUrl: import.meta.env.VITE_APP_API_URL + 'streamline',
-    enableCache: true,
+  cacheUserFields: ['id'],
+  // streamline is now inbuilt via sh-core; configure it here
+  streamlineUrl: import.meta.env.VITE_APP_API_URL + 'streamline',
+  enableCache: true,
 })
 
 

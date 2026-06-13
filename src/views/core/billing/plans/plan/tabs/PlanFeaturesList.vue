@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useStreamline } from '@iankibetsh/vue-streamline'
+import { useStreamline } from '@iankibetsh/sh-core'
 import { shRepo, ShTable, useAppStore } from '@iankibetsh/shframework'
 
 const props = defineProps(['sharedData'])

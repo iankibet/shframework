@@ -1,5 +1,5 @@
 <script setup>
-import {useStreamline} from '@iankibetsh/vue-streamline'
+import {useStreamline} from '@iankibetsh/sh-core'
 import {ShTable} from '@iankibetsh/shframework'
 import SkeletonFull from '@/views/layouts/skeletons/SkeletonFull.vue'
 

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, useId } from 'vue'
 import { ShModalForm, shRepo, ShTable, useAppStore, useUserStore } from '@iankibetsh/shframework'
-import { useStreamline } from '@iankibetsh/vue-streamline'
+import { useStreamline } from '@iankibetsh/sh-core'
 import { storeToRefs } from 'pinia'
 import CardLayout from '@/views/layouts/CardLayout.vue'
 

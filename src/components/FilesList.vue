@@ -17,7 +17,7 @@ const props = defineProps({
 })
 
 
-import { useStreamline } from '@iankibetsh/vue-streamline'
+import { useStreamline } from '@iankibetsh/sh-core'
 import { onMounted, ref, useTemplateRef, watch } from 'vue'
 import { shApis, shRepo, useUserStore } from '@iankibetsh/shframework'
 

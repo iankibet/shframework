@@ -4,6 +4,8 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
     plugins: [vue()],
     build: {
+        // don't copy the demo app's public/ assets (favicon, logo.html) into the package
+        copyPublicDir: false,
         lib: {
             entry: './src/index.js',
             name: 'ShFramework',
@@ -21,7 +23,6 @@ export default defineConfig({
                 'axios',
                 'sweetalert2',
                 'luxon',
-                'lodash',
                 'nprogress'
             ],
             output: {

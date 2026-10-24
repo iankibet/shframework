@@ -344,8 +344,13 @@ const replaceLinkUrl = (p, obj) => {
   return path;
 };
 
-const formatDate = (date) =>
-  DateTime.fromISO(date).toLocaleString(DateTime.DATETIME_MED);
+// Accepts ISO strings and Laravel/MySQL 'yyyy-MM-dd HH:mm:ss' values (raw DB rows aren't ISO)
+const formatDate = (date) => {
+  if (!date) return "";
+  let dt = DateTime.fromISO(date);
+  if (!dt.isValid) dt = DateTime.fromSQL(date);
+  return dt.isValid ? dt.toLocaleString(DateTime.DATETIME_MED) : date;
+};
 
 const setMoreDetailsModel = (row) => {
   moreDetailsModel.value = null;

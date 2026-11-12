@@ -1,6 +1,6 @@
 {
   "name": "@iankibetsh/shframework",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "description": "Vue Bootstrap 5 component library for handling laravel backend, built on @iankibetsh/sh-core",
   "repository": {
     "type": "git",

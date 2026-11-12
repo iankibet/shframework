@@ -30,6 +30,13 @@ export default [
     {
         slug: 'notes',
         type: 'single',
+        label: 'Range Picker',
+        icon: 'bi-calendar',
+        path: '/range',
+    },
+    {
+        slug: 'notes',
+        type: 'single',
         label: 'Tabs',
         icon: 'bi-list',
         path: '/tabs',

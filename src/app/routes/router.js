@@ -3,6 +3,7 @@ import Home from '../../views/Home.vue'
 import tasks from '@/app/routes/tasks/tasks.js'
 import notes from "@/app/routes/notes/notes";
 import Forms from '@/views/core/forms/Forms.vue'
+import RangeDemo from '@/views/core/range/RangeDemo.vue'
 import tabsRoute from '@/app/routes/tabs/tabs.route'
 import BillingMain from '@/views/core/billing/BillingMain.vue'
 import PlansList from '@/views/core/billing/plans/PlansList.vue'
@@ -20,6 +21,10 @@ let routes = [
   {
     path: '/forms',
     component: Forms
+  },
+  {
+    path: '/range',
+    component: RangeDemo
   },
     {
         path: '/billing',
